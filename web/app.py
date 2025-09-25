@@ -19,13 +19,6 @@ app = Flask(__name__)
 STORAGE_DIR = os.environ.get('STORAGE_DIR', '/opt/tg-collector/storage')
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
-# Debug: print STORAGE_DIR and its contents at startup
-print(f"[DEBUG] STORAGE_DIR is set to: {STORAGE_DIR}")
-try:
-    print(f"[DEBUG] Files in STORAGE_DIR at startup: {os.listdir(STORAGE_DIR)}")
-except Exception as e:
-    print(f"[DEBUG] Could not list STORAGE_DIR contents at startup: {e}")
-
 def parse_filename(filename: str) -> Optional[Dict]:
     """Parse ArchiveDrop filename into components (supports 20250925150427-356747848-11-text.txt)."""
     # Pattern: YYYYMMDDHHMMSS-USERID-SEQ-TYPE.txt
@@ -66,13 +59,7 @@ def scan_files(date_filter: Optional[str] = None,
     try:
         storage_path = Path(STORAGE_DIR)
         if not storage_path.exists():
-            print(f"[DEBUG] STORAGE_DIR does not exist: {STORAGE_DIR}")
             return files
-        # Debug: print contents of STORAGE_DIR on each scan
-        try:
-            print(f"[DEBUG] Files in STORAGE_DIR during scan: {os.listdir(STORAGE_DIR)}")
-        except Exception as e:
-            print(f"[DEBUG] Could not list STORAGE_DIR contents during scan: {e}")
         # Recursively walk through all files
         for filepath in storage_path.rglob('*'):
             if not filepath.is_file():
@@ -104,17 +91,8 @@ def scan_files(date_filter: Optional[str] = None,
 
 @app.route('/')
 def index():
-    """Main page with file listing and search. Shows STORAGE_DIR and its contents for debugging."""
-    storage_dir = STORAGE_DIR
-    try:
-        storage_contents = os.listdir(storage_dir)
-    except Exception as e:
-        storage_contents = [f"Error: {e}"]
-    return render_template(
-        'index.html',
-        storage_dir=storage_dir,
-        storage_contents=storage_contents
-    )
+    """Main page with file listing and search."""
+    return render_template('index.html')
 
 @app.route('/api/files')
 def api_files():
