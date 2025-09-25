@@ -1,4 +1,4 @@
-ss -tuln | grep 5000#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 ArchiveDrop Web Interface
 Provides web-based access to collected messages and audio files.
