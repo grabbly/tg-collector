@@ -8,9 +8,10 @@ services:
     container_name: archive-drop-bot
     restart: unless-stopped
     environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - BOT_TOKEN=${BOT_TOKEN}
       - LOG_LEVEL=INFO
-      - STORAGE_ROOT=/app/storage
+      - STORAGE_DIR=/app/storage
+      - PYTHONPATH=/app/src
     volumes:
       # Persistent storage for collected messages
       - archive_storage:/app/storage
