@@ -72,6 +72,11 @@ def scan_files(date_filter: Optional[str] = None,
                 file_info['size'] = filepath.stat().st_size
             except Exception:
                 pass
+            # Keep relative path for nested directories
+            try:
+                file_info['relpath'] = str(filepath.relative_to(storage_path).as_posix())
+            except Exception:
+                file_info['relpath'] = filepath.name
             # Apply filters
             if date_filter and file_info['date'] != date_filter:
                 continue
@@ -125,46 +130,52 @@ def api_files():
         'total': len(files)
     })
 
-@app.route('/api/content/<filename>')
+@app.route('/api/content/<path:filename>')
 def api_content(filename):
-    """Get file content (text files only)."""
-    file_info = parse_filename(filename)
-    if not file_info or file_info['type'] != 'text':
-        abort(400)
-        
+    """Get file content for text-like files by relative path."""
     filepath = os.path.join(STORAGE_DIR, filename)
     if not os.path.exists(filepath):
         abort(404)
-        
+
+    # Basic extension check for text content
+    _, ext = os.path.splitext(filepath.lower())
+    text_exts = {'.txt', '.json', '.log', '.md'}
+    if ext not in text_exts:
+        abort(400)
+
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
         return jsonify({'content': content})
-    except Exception as e:
+    except Exception:
         abort(500)
 
-@app.route('/api/download/<filename>')
+@app.route('/api/download/<path:filename>')
 def api_download(filename):
-    """Download file."""
-    file_info = parse_filename(filename)
-    if not file_info:
-        abort(400)
-        
+    """Download file by relative path."""
     filepath = os.path.join(STORAGE_DIR, filename)
     if not os.path.exists(filepath):
         abort(404)
-        
     mimetype = mimetypes.guess_type(filepath)[0]
     return send_file(filepath, as_attachment=True, mimetype=mimetype)
 
 # Backward/alternate route aliases to match frontend
-@app.route('/api/file/<filename>')
+@app.route('/api/file/<path:filename>')
 def api_file_alias(filename):
     return api_content(filename)
 
-@app.route('/download/<filename>')
+@app.route('/download/<path:filename>')
 def download_alias(filename):
     return api_download(filename)
+
+# Inline media streaming (useful for audio preview)
+@app.route('/media/<path:filename>')
+def media_stream(filename):
+    filepath = os.path.join(STORAGE_DIR, filename)
+    if not os.path.exists(filepath):
+        abort(404)
+    mimetype = mimetypes.guess_type(filepath)[0]
+    return send_file(filepath, as_attachment=False, mimetype=mimetype)
 
 @app.route('/api/stats')
 def api_stats():

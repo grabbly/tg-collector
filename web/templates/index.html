@@ -322,7 +322,7 @@
             const filesHtml = filteredFiles.map(file => {
                 const dateStr = new Date(file.datetime).toLocaleString('ru-RU');
                 return `
-                    <div class="file-item" onclick="toggleFileContent('${file.filename}')">
+                    <div class="file-item" onclick="toggleFileContent('${file.relpath || file.filename}')">
                         <div class="file-header">
                             <div class="file-name">
                                 <i class="bi bi-${file.type === 'text' ? 'file-text' : 'file-music'}"></i>
@@ -335,7 +335,7 @@
                             <span><i class="bi bi-person"></i> User ${file.user_id}</span>
                             <span><i class="bi bi-chat"></i> Channel ${file.channel_id}</span>
                         </div>
-                        <div class="file-content" id="content-${file.filename.replace(/[^a-zA-Z0-9]/g, '_')}">
+                        <div class="file-content" id="content-${(file.relpath || file.filename).replace(/[^a-zA-Z0-9]/g, '_')}">
                             <!-- Content will be loaded here -->
                         </div>
                     </div>
@@ -345,8 +345,8 @@
             container.innerHTML = filesHtml;
         }
 
-        async function toggleFileContent(filename) {
-            const contentId = 'content-' + filename.replace(/[^a-zA-Z0-9]/g, '_');
+        async function toggleFileContent(relpath) {
+            const contentId = 'content-' + relpath.replace(/[^a-zA-Z0-9]/g, '_');
             const contentDiv = document.getElementById(contentId);
             
             if (contentDiv.style.display === 'block') {
@@ -359,25 +359,31 @@
                 contentDiv.style.display = 'block';
                 
                 try {
-                    const response = await fetch(`/api/file/${encodeURIComponent(filename)}`);
-                    const data = await response.json();
-                    
-                    if (data.content !== undefined) {
+                    // Try to load text content first
+                    const textResp = await fetch(`/api/content/${encodeURIComponent(relpath)}`);
+                    if (textResp.ok) {
+                        const data = await textResp.json();
                         contentDiv.innerHTML = `
                             <div style="margin-bottom: 1rem;">
-                                <a href="/download/${encodeURIComponent(filename)}" class="download-btn">
+                                <a href="/download/${encodeURIComponent(relpath)}" class="download-btn">
                                     <i class="bi bi-download"></i> Download
                                 </a>
                             </div>
-                            <div>${data.content || 'No content available'}</div>
+                            <pre style="white-space: pre-wrap;">${(data.content || 'No content available')}</pre>
                         `;
                     } else {
+                        // Fallback: assume audio and render player
                         contentDiv.innerHTML = `
-                            <div>
-                                <a href="/download/${encodeURIComponent(filename)}" class="download-btn">
+                            <div style="margin-bottom: 1rem; display:flex; gap: .5rem; align-items:center;">
+                                <a href="/download/${encodeURIComponent(relpath)}" class="download-btn">
                                     <i class="bi bi-download"></i> Download
                                 </a>
+                                <span style="color:#7f8c8d;">Preview:</span>
                             </div>
+                            <audio controls preload="none" style="width:100%;">
+                                <source src="/media/${encodeURIComponent(relpath)}" type="audio/ogg">
+                                Your browser does not support the audio element.
+                            </audio>
                         `;
                     }
                 } catch (error) {
