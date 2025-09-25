@@ -90,6 +90,17 @@ async def safe_answer(message: Message, text: str) -> None:
         if asyncio.isfuture(result) or hasattr(result, "__await"):
             await result  # type: ignore[func-returns-value]
         # else: non-awaitable mock or sync function; already invoked
+        
+        # Log successful message sending
+        log_event(
+            logger=logger,
+            event="message_sent_successfully",
+            message=f"Message sent to chat {message.chat.id}",
+            chat_id=message.chat.id,
+            message_id=message.message_id,
+            status="success"
+        )
+        
     except TypeError:
         try:
             # Fallback: attempt a non-awaited call (for mocks)
