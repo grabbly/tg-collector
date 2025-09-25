@@ -317,6 +317,45 @@ For high-volume deployments:
 4. Consider log rotation for structured logs
 5. Use dedicated storage mount point
 
+## Troubleshooting
+
+### Common Issues
+
+#### Missing src/lib Directory
+**Problem**: Docker build fails with `ModuleNotFoundError: No module named 'src.lib'`
+
+**Symptoms**: Container logs show import errors for rate_limit, validation, or naming modules
+
+**Solution**: Manually copy the src/lib directory if it wasn't included during project transfer:
+```bash
+# On your local machine, ensure src/lib exists with files:
+ls -la src/lib/
+# Should contain: __init__.py, rate_limit.py, naming.py, validation.py
+
+# If missing on server, copy manually:
+scp -r src/lib/ user@server:/opt/tg-collector/src/
+
+# Then rebuild the container:
+docker compose build --no-cache
+docker compose up -d
+```
+
+#### Permission Denied on Storage Directory
+**Problem**: Bot fails to start with `Permission denied: '/opt/tg-collector'`
+
+**Solution**: 
+```bash
+# Give proper permissions to storage directory
+chmod 777 /opt/tg-collector/storage
+# Or set correct owner (UID 1000 is default for archive-drop user)
+chown -R 1000:1000 /opt/tg-collector/storage
+```
+
+#### Docker Compose Validation Errors
+**Problem**: `volumes must be a mapping` error
+
+**Solution**: Remove empty volumes section from docker-compose.yml or ensure proper YAML format
+
 ## Security Considerations
 
 ### File Permissions
