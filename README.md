@@ -1,5 +1,11 @@
 # ArchiveDrop Documentation
 
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/tests-46%2F50%20passing-brightgreen.svg)](https://github.com/grabbly/tg-collector)
+[![Constitutional AI](https://img.shields.io/badge/constitutional-AI%20compliant-purple.svg)](https://github.com/grabbly/tg-collector)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://github.com/grabbly/tg-collector/tree/main/deploy)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/grabbly/tg-collector/blob/main/LICENSE)
+
 ## Overview
 
 ArchiveDrop is a lightweight Telegram bot that collects user-submitted text and audio messages and stores them securely on a Linux server filesystem. Built with constitutional privacy-by-default principles, atomic operations, and structured logging.
