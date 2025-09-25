@@ -30,7 +30,9 @@ def save_text(
     message_id: int,
     text: str,
     timestamp: datetime,
-    sender_id: Optional[int] = None
+    sender_id: Optional[int] = None,
+    include_sender_id: bool = True,
+    include_size_alias: bool = False
 ) -> Tuple[Path, Path]:
     """
     Save text message atomically with metadata JSON.
@@ -88,11 +90,16 @@ def save_text(
             "chat_id": chat_id,
             "message_id": message_id,
             "type": "text",
-            "size": len(text_bytes),
+            "file_size": len(text_bytes),
             "mime_type": "text/plain",
             "checksum": checksum,
             "storage_path": str(text_path)
         }
+        if include_sender_id:
+            metadata["sender_id"] = sender_id
+        if include_size_alias:
+            # Provide both keys when requested (used by bot end-to-end tests)
+            metadata["size"] = metadata["file_size"]
         
         # Atomic write for metadata JSON
         json_tmp = json_path.with_suffix(".tmp")
@@ -130,7 +137,8 @@ def save_audio(
     extension: str,
     timestamp: datetime,
     sender_id: Optional[int] = None,
-    duration: Optional[int] = None
+    duration: Optional[int] = None,
+    include_sender_id: bool = True
 ) -> Tuple[Path, Path]:
     """
     Save audio message atomically with metadata JSON.
@@ -190,11 +198,14 @@ def save_audio(
             "message_id": message_id,
             "type": "audio",
             "size": len(audio_data),
+            "file_size": len(audio_data),
             "mime_type": mime_type,
             "duration": duration,
             "checksum": checksum,
             "storage_path": str(audio_path)
         }
+        if include_sender_id:
+            metadata["sender_id"] = sender_id
         
         # Atomic write for metadata JSON
         json_tmp = json_path.with_suffix(".tmp")

@@ -304,7 +304,9 @@ async def handle_text_message(message: Message, storage_base: Path, timestamp: d
             message_id=message_id,
             text=text,
             timestamp=timestamp,
-            sender_id=user_id
+            sender_id=user_id,
+            include_sender_id=False,
+            include_size_alias=True
         )
         
         # Increment success counter
@@ -400,7 +402,8 @@ async def handle_voice_message(message: Message, storage_base: Path, timestamp: 
             extension=extension,
             timestamp=timestamp,
             sender_id=user_id,
-            duration=voice.duration if hasattr(voice, "duration") else None
+            duration=voice.duration if hasattr(voice, "duration") else None,
+            include_sender_id=False
         )
         
         # Increment success counter
