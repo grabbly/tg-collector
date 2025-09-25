@@ -80,41 +80,33 @@ def init_rate_limiter() -> RateLimiter:
 async def safe_answer(message: Message, text: str) -> None:
     """Send a reply to the user safely.
 
-    - Uses global bot instance for sending messages.
+    - Uses bot instance from message context.
     - Logs both success and failure cases.
     - Handles both production and test environments.
     """
-    global bot
-    
     # Debug log to see what's happening
     log_event(
         logger=logger,
         event="safe_answer_called",
-        message=f"safe_answer called with bot={bot is not None}, text='{text[:50]}...'",
+        message=f"safe_answer called, text='{text[:50]}...'",
         chat_id=message.chat.id,
         message_id=message.message_id
     )
     
     try:
-        if bot is not None:
-            # Use global bot instance
-            result = await bot.send_message(chat_id=message.chat.id, text=text)
+        # Use message.bot to get the bot instance
+        result = await message.bot.send_message(chat_id=message.chat.id, text=text)
+        
+        # Log successful message sending
+        log_event(
+            logger=logger,
+            event="message_sent_successfully",
+            message=f"Message sent to chat {message.chat.id}",
+            chat_id=message.chat.id,
+            message_id=message.message_id,
+            status="success"
+        )
             
-            # Log successful message sending
-            log_event(
-                logger=logger,
-                event="message_sent_successfully",
-                message=f"Message sent to chat {message.chat.id}",
-                chat_id=message.chat.id,
-                message_id=message.message_id,
-                status="success"
-            )
-        else:
-            # Fallback to message.answer for tests or when bot is not initialized
-            result = message.answer(text)
-            if asyncio.isfuture(result) or hasattr(result, "__await__"):
-                await result
-                
     except Exception as e:
         # Log all errors (API errors, network issues, etc.)
         log_event(
