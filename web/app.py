@@ -61,16 +61,23 @@ def get_file_size(filename: str) -> int:
     except OSError:
         return 0
 
-def scan_files(date_filter: Optional[str] = None, 
-               type_filter: Optional[str] = None,
-               search_query: Optional[str] = None,
-               limit: int = 100) -> List[Dict]:
-    """Recursively scan storage directory for files matching criteria."""
-    files = []
+def scan_files(
+    date_filter: Optional[str] = None,
+    type_filter: Optional[str] = None,
+    search_query: Optional[str] = None,
+    limit: int = 100,
+) -> List[Dict]:
+    """Recursively scan storage directory and aggregate primary files.
+
+    For text: prefer .txt over .json metadata.
+    For audio: prefer media files (.ogg/.mp3/.m4a/.wav) over .json metadata.
+    """
+    media_exts = {"ogg", "mp3", "m4a", "wav"}
+    aggregated: Dict[str, Dict] = {}
     try:
         storage_path = Path(STORAGE_DIR)
         if not storage_path.exists():
-            return files
+            return []
         # Recursively walk through all files
         for filepath in storage_path.rglob('*'):
             if not filepath.is_file():
@@ -88,27 +95,85 @@ def scan_files(date_filter: Optional[str] = None,
                 file_info['relpath'] = str(filepath.relative_to(storage_path).as_posix())
             except Exception:
                 file_info['relpath'] = filepath.name
-            # Apply filters
+            # Group by base name without extension (includes -text/-audio)
+            base_key = filepath.stem  # e.g., 20250925145342-356747848-8-audio
+
+            # Apply basic pre-filters before aggregation when possible
             if date_filter and file_info['date'] != date_filter:
                 continue
             if type_filter and file_info['type'] != type_filter:
                 continue
-            # Search in text files content
+            # Search in text files content only
             if search_query and file_info['type'] == 'text':
                 try:
                     content = filepath.read_text(encoding='utf-8')
                     if search_query.lower() not in content.lower():
                         continue
-                except:
+                except Exception:
                     continue
-            files.append(file_info)
-            if len(files) >= limit:
-                break
+
+            existing = aggregated.get(base_key)
+            ext = file_info['extension'].lower()
+            is_media = file_info['type'] == 'audio' and ext in media_exts
+            is_text_primary = file_info['type'] == 'text' and ext == 'txt'
+            is_json_meta = ext == 'json'
+
+            if existing is None:
+                # Initialize entry; we'll set primary relpath below
+                entry = dict(file_info)
+                entry['meta_relpath'] = None
+                # Set primary based on type/extension
+                if is_media or is_text_primary or not is_json_meta:
+                    # Primary file
+                    pass
+                else:
+                    # JSON meta as placeholder; primary may be updated later
+                    pass
+                aggregated[base_key] = entry
+                existing = entry
+
+            # Update primary/metadata preferences
+            if file_info['type'] == 'audio':
+                if is_media:
+                    # Prefer media as primary
+                    existing.update({
+                        'relpath': file_info['relpath'],
+                        'extension': file_info['extension'],
+                        'size': file_info['size'],
+                    })
+                elif is_json_meta:
+                    existing['meta_relpath'] = file_info['relpath']
+                    # If we don't yet have a primary, set to json for visibility
+                    if existing.get('relpath') is None:
+                        existing.update({
+                            'relpath': file_info['relpath'],
+                            'extension': file_info['extension'],
+                            'size': file_info['size'],
+                        })
+            else:  # text
+                if is_text_primary:
+                    # Prefer .txt as primary
+                    existing.update({
+                        'relpath': file_info['relpath'],
+                        'extension': file_info['extension'],
+                        'size': file_info['size'],
+                    })
+                elif is_json_meta:
+                    existing['meta_relpath'] = file_info['relpath']
+                    if existing.get('relpath') is None:
+                        existing.update({
+                            'relpath': file_info['relpath'],
+                            'extension': file_info['extension'],
+                            'size': file_info['size'],
+                        })
+            # (Old list-based accumulation removed; aggregation is used instead)
     except Exception as e:
         print(f"Error scanning files: {e}")
-    # Sort by datetime descending
-    files.sort(key=lambda x: x['datetime'], reverse=True)
-    return files
+    # Turn into list and sort by datetime descending
+    files_list = list(aggregated.values())
+    files_list.sort(key=lambda x: x['datetime'], reverse=True)
+    # Enforce limit
+    return files_list[:limit]
 
 @app.route('/')
 def index():
