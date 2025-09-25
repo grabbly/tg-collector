@@ -86,6 +86,15 @@ async def safe_answer(message: Message, text: str) -> None:
     """
     global bot
     
+    # Debug log to see what's happening
+    log_event(
+        logger=logger,
+        event="safe_answer_called",
+        message=f"safe_answer called with bot={bot is not None}, text='{text[:50]}...'",
+        chat_id=message.chat.id,
+        message_id=message.message_id
+    )
+    
     try:
         if bot is not None:
             # Use global bot instance
