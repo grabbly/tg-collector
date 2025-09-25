@@ -30,7 +30,7 @@ except Exception as e:
 def parse_filename(filename: str) -> Optional[Dict]:
     """Parse ArchiveDrop filename into components."""
     # Pattern: YYYYMMDD_HHMMSS_type_userid_hash.ext
-    pattern = r'^(\d{8})_(\d{6})_(text|audio)_(\d+)_([a-f0-9]+)\.(.+)$'
+        pattern = r'^(\d{14})-(\d+)-(\d+)-(text|audio)\.(.+)$'
     match = re.match(pattern, filename)
     
     if not match:
@@ -52,6 +52,28 @@ def parse_filename(filename: str) -> Optional[Dict]:
         'extension': ext,
         'size': get_file_size(filename)
     }
+    """Parse ArchiveDrop filename into components (supports 20250925150427-356747848-11-text.txt)."""
+    # Pattern: YYYYMMDDHHMMSS-USERID-SEQ-TYPE.txt
+    pattern = r'^(\d{14})-(\d+)-(\d+)-(text|audio)\.(.+)$'
+    match = re.match(pattern, filename)
+    if not match:
+        return None
+    dt_str, user_id, seq, msg_type, ext = match.groups()
+    try:
+        dt = datetime.strptime(dt_str, "%Y%m%d%H%M%S")
+    except Exception:
+        return None
+    return {
+        'filename': filename,
+        'datetime': dt,
+        'date': dt_str[:8],
+        'time': dt_str[8:],
+        'type': msg_type,
+        'user_id': user_id,
+        'seq': seq,
+        'extension': ext,
+        'size': get_file_size(filename)
+    }
 
 def get_file_size(filename: str) -> int:
     """Get file size in bytes."""
@@ -64,9 +86,8 @@ def scan_files(date_filter: Optional[str] = None,
                type_filter: Optional[str] = None,
                search_query: Optional[str] = None,
                limit: int = 100) -> List[Dict]:
-    """Scan storage directory for files matching criteria."""
+    """Recursively scan storage directory for files matching criteria."""
     files = []
-    
     try:
         storage_path = Path(STORAGE_DIR)
         if not storage_path.exists():
@@ -77,7 +98,8 @@ def scan_files(date_filter: Optional[str] = None,
             print(f"[DEBUG] Files in STORAGE_DIR during scan: {os.listdir(STORAGE_DIR)}")
         except Exception as e:
             print(f"[DEBUG] Could not list STORAGE_DIR contents during scan: {e}")
-        for filepath in storage_path.iterdir():
+        # Recursively walk through all files
+        for filepath in storage_path.rglob('*'):
             if not filepath.is_file():
                 continue
             file_info = parse_filename(filepath.name)
@@ -101,7 +123,6 @@ def scan_files(date_filter: Optional[str] = None,
                 break
     except Exception as e:
         print(f"Error scanning files: {e}")
-        
     # Sort by datetime descending
     files.sort(key=lambda x: x['datetime'], reverse=True)
     return files
