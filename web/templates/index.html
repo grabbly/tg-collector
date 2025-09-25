@@ -1,35 +1,40 @@
-<div style="color:red; font-size:1.5em; font-weight:bold;">DEBUG: index.html from /web/templates</div>
-    <!-- Debug info: show storage dir and contents -->
-    <div class="alert alert-info">
-        <strong>STORAGE_DIR:</strong> {{ storage_dir }}<br>
-        <strong>Contents:</strong> {{ storage_contents|join(', ') }}
-    </div>
-    <div id="stats" class="mb-3"></div>
-    <form id="filter-form" class="row g-3 mb-3">
-        <div class="col-md-2">
-            <label for="date" class="form-label">Date Filter</label>
-            <input type="date" class="form-control" id="date" name="date">
-        </div>
-        <div class="col-md-2">
-            <label for="type" class="form-label">Type Filter</label>
-            <select class="form-select" id="type" name="type">
-                <option value="">All</option>
-                <option value="text">Text</option>
-                <option value="audio">Audio</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="search" class="form-label">Search Content</label>
-            <input type="text" class="form-control" id="search" name="search" placeholder="Search in text messages">
-        </div>
-        <div class="col-md-2">
-            <label for="limit" class="form-label">Limit Results</label>
-            <input type="number" class="form-control" id="limit" name="limit" value="100" min="1" max="500">
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary w-100">Apply</button>
-        </div>
-    </form>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive Drop - Archived Files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            padding: 2rem 1rem;
+        }
+
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header .lead {
+            color: #7f8c8d;
+            margin: 0;
         }
 
         .controls {
@@ -133,7 +138,7 @@
 
         .file-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 0.5rem;
         }
@@ -205,246 +210,207 @@
             text-decoration: none;
             display: inline-block;
             font-size: 0.9rem;
-            margin-left: 1rem;
+            transition: background 0.3s ease;
         }
 
         .download-btn:hover {
             background: #2980b9;
         }
-
-        @media (max-width: 768px) {
-            .controls {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .file-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .file-type {
-                margin-left: 0;
-                margin-top: 0.5rem;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📁 ArchiveDrop Archive</h1>
-            <p class="subtitle">Browse and search your collected messages and audio files</p>
-        </header>
+        <div class="header">
+            <h1><i class="bi bi-archive"></i> Archive Drop</h1>
+            <p class="lead">Browse and download archived files from Telegram</p>
+        </div>
 
         <div class="controls">
             <div class="form-group">
-                <label for="dateFilter">Date Filter</label>
-                <input type="date" id="dateFilter" placeholder="Filter by date">
+                <label for="dateFilter">Filter by Date:</label>
+                <input type="date" id="dateFilter" class="form-control">
             </div>
-            
             <div class="form-group">
-                <label for="typeFilter">Type Filter</label>
-                <select id="typeFilter">
-                    <option value="">All Types</option>
-                    <option value="text">Text Messages</option>
-                    <option value="audio">Audio Messages</option>
+                <label for="typeFilter">Filter by Type:</label>
+                <select id="typeFilter" class="form-control">
+                    <option value="">All types</option>
+                    <option value="text">Text</option>
+                    <option value="audio">Audio</option>
                 </select>
             </div>
-            
             <div class="form-group">
-                <label for="searchQuery">Search Content</label>
-                <input type="text" id="searchQuery" placeholder="Search in text messages...">
-            </div>
-            
-            <div class="form-group">
-                <label for="limitFiles">Limit Results</label>
-                <select id="limitFiles">
-                    <option value="50">50 files</option>
-                    <option value="100" selected>100 files</option>
-                    <option value="200">200 files</option>
-                    <option value="500">500 files</option>
-                </select>
+                <label for="searchFilter">Search:</label>
+                <input type="text" id="searchFilter" placeholder="Search files..." class="form-control">
             </div>
         </div>
 
         <div class="stats" id="stats">
-            <div class="stat-item">
-                <span class="stat-number" id="totalFiles">-</span>
-                <div class="stat-label">Total Files</div>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number" id="textFiles">-</span>
-                <div class="stat-label">Text Messages</div>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number" id="audioFiles">-</span>
-                <div class="stat-label">Audio Files</div>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number" id="totalSize">-</span>
-                <div class="stat-label">Total Size</div>
-            </div>
+            <!-- Statistics will be loaded here -->
         </div>
 
         <div class="files-container">
             <div class="files-header">
-                <h2>📄 Files</h2>
+                <h3><i class="bi bi-folder2-open"></i> Archived Files</h3>
             </div>
-            <div class="files-list" id="filesList">
-                <div class="loading">Loading files...</div>
+            <div id="filesList" class="files-list">
+                <div class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading files...</p>
+                </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentFiles = [];
+        let allFiles = [];
+        let filteredFiles = [];
 
-        // Format file size
-        function formatSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
-        // Format date for display
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-        }
-
-        // Load stats
-        async function loadStats() {
-            try {
-                const response = await fetch('/api/stats');
-                const stats = await response.json();
-                
-                document.getElementById('totalFiles').textContent = stats.total_files || 0;
-                document.getElementById('textFiles').textContent = stats.text_files || 0;
-                document.getElementById('audioFiles').textContent = stats.audio_files || 0;
-                document.getElementById('totalSize').textContent = formatSize(stats.total_size || 0);
-            } catch (error) {
-                console.error('Failed to load stats:', error);
-            }
-        }
-
-        // Load files
         async function loadFiles() {
-            const params = new URLSearchParams();
-            
-            const date = document.getElementById('dateFilter').value;
-            const type = document.getElementById('typeFilter').value;
-            const search = document.getElementById('searchQuery').value;
-            const limit = document.getElementById('limitFiles').value;
-            
-            if (date) params.append('date', date.replace(/-/g, ''));
-            if (type) params.append('type', type);
-            if (search) params.append('search', search);
-            if (limit) params.append('limit', limit);
-            
-            const filesList = document.getElementById('filesList');
-            filesList.innerHTML = '<div class="loading">Loading files...</div>';
-            
             try {
-                const response = await fetch(`/api/files?${params}`);
-                const data = await response.json();
-                currentFiles = data.files;
-                
-                if (currentFiles.length === 0) {
-                    filesList.innerHTML = '<div class="loading">No files found matching your criteria.</div>';
-                    return;
+                const response = await fetch('/api/files');
+                if (!response.ok) {
+                    throw new Error('Failed to load files');
                 }
-                
-                renderFiles();
+                const data = await response.json();
+                allFiles = data.files || [];
+                filteredFiles = [...allFiles];
+                updateStats();
+                displayFiles();
             } catch (error) {
-                filesList.innerHTML = '<div class="error">Failed to load files. Please try again.</div>';
-                console.error('Failed to load files:', error);
+                document.getElementById('filesList').innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
             }
         }
 
-        // Render files list
-        function renderFiles() {
-            const filesList = document.getElementById('filesList');
-            
-            filesList.innerHTML = currentFiles.map(file => `
-                <div class="file-item" onclick="toggleContent('${file.filename}')">
-                    <div class="file-header">
-                        <div class="file-name">${file.filename}</div>
-                        <span class="file-type ${file.type}">${file.type.toUpperCase()}</span>
-                        <a href="/api/download/${file.filename}" class="download-btn" onclick="event.stopPropagation()">
-                            📥 Download
-                        </a>
-                    </div>
-                    <div class="file-meta">
-                        <span>📅 ${formatDate(file.datetime_str)}</span>
-                        <span>👤 User ${file.user_id}</span>
-                        <span>📊 ${formatSize(file.size)}</span>
-                        <span>🔑 ${file.checksum}</span>
-                    </div>
-                    <div class="file-content" id="content-${file.filename}"></div>
+        function updateStats() {
+            const stats = {
+                total: filteredFiles.length,
+                text: filteredFiles.filter(f => f.type === 'text').length,
+                audio: filteredFiles.filter(f => f.type === 'audio').length
+            };
+
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-number">${stats.total}</span>
+                    <div class="stat-label">Total Files</div>
                 </div>
-            `).join('');
+                <div class="stat-item">
+                    <span class="stat-number">${stats.text}</span>
+                    <div class="stat-label">Text Files</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${stats.audio}</span>
+                    <div class="stat-label">Audio Files</div>
+                </div>
+            `;
         }
 
-        // Toggle file content display
-        async function toggleContent(filename) {
-            const contentDiv = document.getElementById(`content-${filename}`);
-            const file = currentFiles.find(f => f.filename === filename);
+        function displayFiles() {
+            const container = document.getElementById('filesList');
             
-            if (file.type !== 'text') {
-                return; // Only show content for text files
+            if (filteredFiles.length === 0) {
+                container.innerHTML = '<div class="loading">No files found</div>';
+                return;
             }
+
+            const filesHtml = filteredFiles.map(file => {
+                const dateStr = new Date(file.datetime).toLocaleString('ru-RU');
+                return `
+                    <div class="file-item" onclick="toggleFileContent('${file.filename}')">
+                        <div class="file-header">
+                            <div class="file-name">
+                                <i class="bi bi-${file.type === 'text' ? 'file-text' : 'file-music'}"></i>
+                                ${file.filename}
+                            </div>
+                            <span class="file-type ${file.type}">${file.type.toUpperCase()}</span>
+                        </div>
+                        <div class="file-meta">
+                            <span><i class="bi bi-calendar"></i> ${dateStr}</span>
+                            <span><i class="bi bi-person"></i> User ${file.user_id}</span>
+                            <span><i class="bi bi-chat"></i> Channel ${file.channel_id}</span>
+                        </div>
+                        <div class="file-content" id="content-${file.filename.replace(/[^a-zA-Z0-9]/g, '_')}">
+                            <!-- Content will be loaded here -->
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = filesHtml;
+        }
+
+        async function toggleFileContent(filename) {
+            const contentId = 'content-' + filename.replace(/[^a-zA-Z0-9]/g, '_');
+            const contentDiv = document.getElementById(contentId);
             
             if (contentDiv.style.display === 'block') {
                 contentDiv.style.display = 'none';
                 return;
             }
-            
-            if (contentDiv.innerHTML === '') {
+
+            if (contentDiv.innerHTML.trim() === '') {
                 contentDiv.innerHTML = '<div class="loading">Loading content...</div>';
+                contentDiv.style.display = 'block';
                 
                 try {
-                    const response = await fetch(`/api/content/${filename}`);
+                    const response = await fetch(`/api/file/${encodeURIComponent(filename)}`);
                     const data = await response.json();
-                    contentDiv.innerHTML = data.content;
+                    
+                    if (data.content !== undefined) {
+                        contentDiv.innerHTML = `
+                            <div style="margin-bottom: 1rem;">
+                                <a href="/download/${encodeURIComponent(filename)}" class="download-btn">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </div>
+                            <div>${data.content || 'No content available'}</div>
+                        `;
+                    } else {
+                        contentDiv.innerHTML = `
+                            <div>
+                                <a href="/download/${encodeURIComponent(filename)}" class="download-btn">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </div>
+                        `;
+                    }
                 } catch (error) {
-                    contentDiv.innerHTML = '<div class="error">Failed to load content.</div>';
+                    contentDiv.innerHTML = `<div class="error">Error loading content: ${error.message}</div>`;
                 }
+            } else {
+                contentDiv.style.display = 'block';
             }
-            
-            contentDiv.style.display = 'block';
+        }
+
+        function applyFilters() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            filteredFiles = allFiles.filter(file => {
+                if (dateFilter && !file.datetime.startsWith(dateFilter)) return false;
+                if (typeFilter && file.type !== typeFilter) return false;
+                if (searchFilter && !file.filename.toLowerCase().includes(searchFilter)) return false;
+                return true;
+            });
+
+            updateStats();
+            displayFiles();
         }
 
         // Event listeners
-        document.getElementById('dateFilter').addEventListener('change', loadFiles);
-        document.getElementById('typeFilter').addEventListener('change', loadFiles);
-        document.getElementById('searchQuery').addEventListener('input', 
-            debounce(loadFiles, 500));
-        document.getElementById('limitFiles').addEventListener('change', loadFiles);
+        document.getElementById('dateFilter').addEventListener('change', applyFilters);
+        document.getElementById('typeFilter').addEventListener('change', applyFilters);
+        document.getElementById('searchFilter').addEventListener('input', applyFilters);
 
-        // Debounce function for search
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadStats();
-            loadFiles();
-        });
+        // Load files on page load
+        loadFiles();
     </script>
 </body>
 </html>
