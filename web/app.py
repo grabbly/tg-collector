@@ -67,6 +67,11 @@ def scan_files(date_filter: Optional[str] = None,
             file_info = parse_filename(filepath.name)
             if not file_info:
                 continue
+            # Ensure size is taken from the actual path (handles nested dirs)
+            try:
+                file_info['size'] = filepath.stat().st_size
+            except Exception:
+                pass
             # Apply filters
             if date_filter and file_info['date'] != date_filter:
                 continue
@@ -103,12 +108,18 @@ def api_files():
     limit = min(int(request.args.get('limit', 100)), 500)
     
     files = scan_files(date_filter, type_filter, search_query, limit)
-    
+
     # Convert datetime objects to strings for JSON serialization
     for file_info in files:
-        file_info['datetime_str'] = file_info['datetime'].strftime('%Y-%m-%d %H:%M:%S')
-        del file_info['datetime']
-    
+        # Keep ISO for programmatic use and a pretty string for display
+        dt_obj = file_info.get('datetime')
+        if isinstance(dt_obj, datetime):
+            file_info['datetime'] = dt_obj.isoformat()
+            file_info['datetime_str'] = dt_obj.strftime('%Y-%m-%d %H:%M:%S')
+        # Do not keep raw datetime objects in JSON
+        if isinstance(file_info.get('datetime'), datetime):
+            file_info['datetime'] = file_info['datetime'].isoformat()
+
     return jsonify({
         'files': files,
         'total': len(files)
@@ -146,20 +157,29 @@ def api_download(filename):
     mimetype = mimetypes.guess_type(filepath)[0]
     return send_file(filepath, as_attachment=True, mimetype=mimetype)
 
+# Backward/alternate route aliases to match frontend
+@app.route('/api/file/<filename>')
+def api_file_alias(filename):
+    return api_content(filename)
+
+@app.route('/download/<filename>')
+def download_alias(filename):
+    return api_download(filename)
+
 @app.route('/api/stats')
 def api_stats():
     """Get storage statistics."""
     try:
         files = scan_files(limit=10000)  # Get more files for stats
-        
+
         stats = {
             'total_files': len(files),
             'text_files': len([f for f in files if f['type'] == 'text']),
             'audio_files': len([f for f in files if f['type'] == 'audio']),
             'total_size': sum(f['size'] for f in files),
             'date_range': {
-                'first': files[-1]['datetime_str'] if files else None,
-                'last': files[0]['datetime_str'] if files else None
+                'first': files[-1]['datetime'].strftime('%Y-%m-%d %H:%M:%S') if files else None,
+                'last': files[0]['datetime'].strftime('%Y-%m-%d %H:%M:%S') if files else None
             }
         }
         
