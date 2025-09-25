@@ -7,6 +7,7 @@ services:
       dockerfile: deploy/Dockerfile
     container_name: archive-drop-bot
     restart: unless-stopped
+    working_dir: /app
     environment:
       LOG_LEVEL: INFO
       STORAGE_DIR: ${STORAGE_DIR}
