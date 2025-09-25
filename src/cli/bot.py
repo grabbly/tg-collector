@@ -332,6 +332,16 @@ async def handle_message(message: Message) -> None:
             await safe_answer(message, "❌ Unsupported message type. Send text or voice messages only.")
     
     except Exception as e:
+        # Debug: Log detailed error information
+        log_event(
+            logger=logger,
+            event="message_processing_error_detailed",
+            message=f"Error processing message: {type(e).__name__}: {e}",
+            chat_id=chat_id,
+            message_id=message_id,
+            status="error"
+        )
+        
         log_event(
             logger=logger,
             event="message_processing_error",
