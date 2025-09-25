@@ -52,6 +52,7 @@ def parse_filename(filename: str) -> Optional[Dict]:
         'extension': ext,
         'size': get_file_size(filename)
     }
+def parse_filename(filename: str) -> Optional[Dict]:
     """Parse ArchiveDrop filename into components (supports 20250925150427-356747848-11-text.txt)."""
     # Pattern: YYYYMMDDHHMMSS-USERID-SEQ-TYPE.txt
     pattern = r'^(\d{14})-(\d+)-(\d+)-(text|audio)\.(.+)$'
