@@ -171,6 +171,8 @@ def scan_files(
         print(f"Error scanning files: {e}")
     # Turn into list and sort by datetime descending
     files_list = list(aggregated.values())
+    # Exclude JSON files from listing per requirements
+    files_list = [f for f in files_list if f.get('extension', '').lower() != 'json']
     files_list.sort(key=lambda x: x['datetime'], reverse=True)
     # Enforce limit
     return files_list[:limit]
