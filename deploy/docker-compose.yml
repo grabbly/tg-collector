@@ -8,10 +8,10 @@ services:
     container_name: archive-drop-bot
     restart: unless-stopped
     environment:
-      - BOT_TOKEN=${BOT_TOKEN}
-      - LOG_LEVEL=INFO
-      - STORAGE_DIR=/app/storage
-      - PYTHONPATH=/app/src
+      LOG_LEVEL: INFO
+      STORAGE_DIR: ${STORAGE_DIR}
+      PYTHONPATH: ${PYTHONPATH}
+      BOT_TOKEN: ${BOT_TOKEN}
     volumes:
       # Persistent storage for collected messages
       - archive_storage:/app/storage
