@@ -25,38 +25,44 @@ docker compose -f /opt/tg-collector/deploy/docker-compose.yml up -d
 curl http://localhost:5000/api/stats
 ```
 
-### 2. Set Up Nginx (for subdomain access)
+### 2. Set Up Apache2 (for subdomain access)
 ```bash
-# Copy nginx configuration
-sudo cp /opt/tg-collector/deploy/nginx-archive.conf /etc/nginx/sites-available/
+# Enable required Apache modules
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod headers
+sudo a2enmod rewrite
+sudo a2enmod ssl  # If you plan to use HTTPS
 
-# Edit the configuration
-sudo nano /etc/nginx/sites-available/nginx-archive.conf
-# Update server_name to your subdomain (e.g., archive.yourdomain.com)
+# Copy Apache configuration
+sudo cp /opt/tg-collector/deploy/apache2-archive.conf /etc/apache2/sites-available/
+
+# The configuration is already set for tg-collector.acebox.eu
+# No need to edit ServerName
 
 # Enable the site
-sudo ln -s /etc/nginx/sites-available/nginx-archive.conf /etc/nginx/sites-enabled/
+sudo a2ensite apache2-archive.conf
 
-# Test nginx configuration
-sudo nginx -t
+# Test Apache configuration
+sudo apache2ctl configtest
 
-# Reload nginx
-sudo systemctl reload nginx
+# Reload Apache
+sudo systemctl reload apache2
 ```
 
 ### 3. DNS Configuration
 Point your subdomain to your server's IP address:
 ```
-archive.yourdomain.com A 91.200.41.59
+tg-collector.acebox.eu A 91.200.41.59
 ```
 
 ### 4. SSL Certificate (Optional but Recommended)
 ```bash
 # Install certbot if not already installed
-sudo apt install certbot python3-certbot-nginx
+sudo apt install certbot python3-certbot-apache
 
 # Get SSL certificate
-sudo certbot --nginx -d archive.yourdomain.com
+sudo certbot --apache -d tg-collector.acebox.eu
 
 # Verify auto-renewal
 sudo certbot renew --dry-run
@@ -93,13 +99,16 @@ docker logs archive-drop-web
 sudo netstat -tlnp | grep :5000
 ```
 
-### Nginx Issues
+### Apache2 Issues
 ```bash
-# Check nginx logs
-sudo tail -f /var/log/nginx/archive_error.log
+# Check Apache logs
+sudo tail -f /var/log/apache2/archive_error.log
 
 # Test configuration
-sudo nginx -t
+sudo apache2ctl configtest
+
+# Check if modules are enabled
+sudo a2enmod proxy proxy_http headers rewrite
 ```
 
 ### Files Not Showing
