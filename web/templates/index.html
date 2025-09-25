@@ -324,7 +324,7 @@
                                 ${file.filename}
                             </div>
                             <span class="file-type ${file.type}">${file.type.toUpperCase()}</span>
-                            <a href="/download/${encodeURIComponent(file.relpath || file.filename)}" class="download-btn" style="margin-left: auto;">
+                            <a href="/download/${file.relpath || file.filename}" class="download-btn" style="margin-left: auto;">
                                 <i class="bi bi-download"></i> Download
                             </a>
                         </div>
