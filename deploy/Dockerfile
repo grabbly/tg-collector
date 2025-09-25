@@ -37,7 +37,7 @@ RUN mkdir -p /app/storage && \
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
-ENV STORAGE_ROOT="/app/storage"
+ENV STORAGE_DIR="/app/storage"
 
 # Switch to non-root user
 USER archive-drop
