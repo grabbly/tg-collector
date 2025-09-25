@@ -127,7 +127,24 @@ async def handle_start(message: Message) -> None:
     )
     
     try:
+        log_event(
+            logger=logger,
+            event="sending_welcome_message",
+            message=f"Sending welcome message to user {user_id}",
+            chat_id=chat_id,
+            message_id=message.message_id
+        )
+        
         await safe_answer(message, welcome_text)
+        
+        log_event(
+            logger=logger,
+            event="welcome_message_sent",
+            message=f"Welcome message sent to user {user_id}",
+            chat_id=chat_id,
+            message_id=message.message_id,
+            status="success"
+        )
     except Exception as e:
         log_event(
             logger=logger,
