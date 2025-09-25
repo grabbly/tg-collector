@@ -19,6 +19,17 @@ app = Flask(__name__)
 STORAGE_DIR = os.environ.get('STORAGE_DIR', '/opt/tg-collector/storage')
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
+
+@app.after_request
+def add_no_cache_headers(response):
+    """Disable caching for HTML to prevent stale UI in proxies/browsers."""
+    content_type = response.headers.get('Content-Type', '')
+    if 'text/html' in content_type:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 def parse_filename(filename: str) -> Optional[Dict]:
     """Parse ArchiveDrop filename into components (supports 20250925150427-356747848-11-text.txt)."""
     # Pattern: YYYYMMDDHHMMSS-USERID-SEQ-TYPE.txt
