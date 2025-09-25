@@ -322,7 +322,7 @@
             const filesHtml = filteredFiles.map(file => {
                 const dateStr = new Date(file.datetime).toLocaleString('ru-RU');
                 return `
-                    <div class="file-item" onclick="toggleFileContent('${file.relpath || file.filename}')">
+                    <div class="file-item" onclick="toggleFileContent('${file.relpath || file.filename}', '${file.extension || ''}')">
                         <div class="file-header">
                             <div class="file-name">
                                 <i class="bi bi-${file.type === 'text' ? 'file-text' : 'file-music'}"></i>
@@ -345,7 +345,7 @@
             container.innerHTML = filesHtml;
         }
 
-        async function toggleFileContent(relpath) {
+        async function toggleFileContent(relpath, ext = '') {
             const contentId = 'content-' + relpath.replace(/[^a-zA-Z0-9]/g, '_');
             const contentDiv = document.getElementById(contentId);
             
@@ -372,6 +372,10 @@
                             <pre style="white-space: pre-wrap;">${(data.content || 'No content available')}</pre>
                         `;
                     } else {
+                        // Determine MIME type from extension
+                        const extLower = (ext || '').toLowerCase();
+                        const mimeMap = { mp3: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg', wav: 'audio/wav' };
+                        const mime = mimeMap[extLower] || 'audio/ogg';
                         // Fallback: assume audio and render player
                         contentDiv.innerHTML = `
                             <div style="margin-bottom: 1rem; display:flex; gap: .5rem; align-items:center;">
@@ -381,7 +385,7 @@
                                 <span style="color:#7f8c8d;">Preview:</span>
                             </div>
                             <audio controls preload="none" style="width:100%;">
-                                <source src="/media/${encodeURIComponent(relpath)}" type="audio/ogg">
+                                <source src="/media/${encodeURIComponent(relpath)}" type="${mime}">
                                 Your browser does not support the audio element.
                             </audio>
                         `;
