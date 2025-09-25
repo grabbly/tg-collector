@@ -382,6 +382,15 @@ async def handle_text_message(message: Message, storage_base: Path, timestamp: d
             size=len(text.encode('utf-8'))
         )
         
+        # Debug: About to call safe_answer
+        log_event(
+            logger=logger,
+            event="about_to_call_safe_answer",
+            message=f"About to call safe_answer for user {user_id}",
+            chat_id=chat_id,
+            message_id=message_id
+        )
+        
         # Confirm to user (no sensitive content in response)
         await safe_answer(message, f"✅ Text saved ({len(text.encode('utf-8'))} bytes)")
         
