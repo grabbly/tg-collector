@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  archive-drop:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: archive-drop-bot
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - LOG_LEVEL=INFO
+      - STORAGE_ROOT=/app/storage
+    volumes:
+      # Persistent storage for collected messages
+      - archive_storage:/app/storage
+      # Optional: custom config directory
+      # - ./config:/app/config:ro
+    # Optional: Expose health check port
+    # ports:
+    #   - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('/app/storage') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+volumes:
+  archive_storage:
+    driver: local

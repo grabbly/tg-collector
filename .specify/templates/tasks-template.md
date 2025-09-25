@@ -46,33 +46,33 @@
 - [ ] T001 Create project structure per implementation plan
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
+ - [ ] T004 [P] Configure structured JSON logging per constitution
+ - [ ] T005 [P] Add health check command/endpoint scaffold
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T004 [P] Contract test POST /api/users in tests/contract/test_users_post.py
-- [ ] T005 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
-- [ ] T006 [P] Integration test user registration in tests/integration/test_registration.py
-- [ ] T007 [P] Integration test auth flow in tests/integration/test_auth.py
+- [ ] T006 [P] Unit test: deterministic filename builder
+- [ ] T007 [P] Unit test: MIME/type validator rejects unsupported types
+- [ ] T008 [P] Integration test: save text message to filesystem with metadata JSON
+- [ ] T009 [P] Integration test: save voice message (audio/ogg) atomically with checksum
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [ ] T008 [P] User model in src/models/user.py
-- [ ] T009 [P] UserService CRUD in src/services/user_service.py
-- [ ] T010 [P] CLI --create-user in src/cli/user_commands.py
-- [ ] T011 POST /api/users endpoint
-- [ ] T012 GET /api/users/{id} endpoint
-- [ ] T013 Input validation
-- [ ] T014 Error handling and logging
+- [ ] T010 [P] Filename builder in src/lib/naming.py
+- [ ] T011 [P] MIME/type validator in src/lib/validation.py
+- [ ] T012 [P] Filesystem storage service with atomic writes in src/services/storage.py
+- [ ] T013 Telegram bot handlers for text and voice in src/cli/bot.py
+- [ ] T014 Error handling and structured logging per constitution
 
 ## Phase 3.4: Integration
-- [ ] T015 Connect UserService to DB
-- [ ] T016 Auth middleware
-- [ ] T017 Request/response logging
-- [ ] T018 CORS and security headers
+- [ ] T015 Wire handlers to storage service
+- [ ] T016 Health check command/endpoint returns status JSON
+- [ ] T017 Observability: log received/saved/failed events with redaction
+- [ ] T018 Systemd unit file and service docs (Linux)
 
 ## Phase 3.5: Polish
 - [ ] T019 [P] Unit tests for validation in tests/unit/test_validation.py
 - [ ] T020 Performance tests (<200ms)
-- [ ] T021 [P] Update docs/api.md
+- [ ] T021 [P] Update README with run/deploy instructions
 - [ ] T022 Remove duplication
 - [ ] T023 Run manual-testing.md
 

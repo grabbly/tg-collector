@@ -1,0 +1,44 @@
+[Unit]
+Description=ArchiveDrop Telegram Bot
+Documentation=https://github.com/user/tg-collector
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=archive-drop
+Group=archive-drop
+WorkingDirectory=/opt/archive-drop
+Environment=PYTHONPATH=/opt/archive-drop/src
+Environment=TELEGRAM_BOT_TOKEN=your_token_here
+Environment=STORAGE_ROOT=/var/lib/archive-drop/storage
+Environment=LOG_LEVEL=INFO
+
+# Use uv to run in the virtual environment
+ExecStart=/opt/archive-drop/.venv/bin/python -m src.cli.bot
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/archive-drop
+CapabilityBoundingSet=
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=archive-drop
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
