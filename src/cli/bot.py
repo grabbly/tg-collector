@@ -354,6 +354,15 @@ async def handle_text_message(message: Message, storage_base: Path, timestamp: d
     message_id = message.message_id
     user_id = message.from_user.id if message.from_user else 0
     text = message.text
+
+    # Debug: Start of function
+    log_event(
+        logger=logger,
+        event="handle_text_message_start",
+        message=f"Starting handle_text_message for user {user_id}",
+        chat_id=chat_id,
+        message_id=message_id
+    )
     
     try:
         # Save text atomically
