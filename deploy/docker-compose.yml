@@ -43,6 +43,7 @@ services:
       dockerfile: web/Dockerfile
     container_name: archive-drop-web
     restart: unless-stopped
+    env_file: .env
     environment:
       STORAGE_DIR: /app/storage
       DEBUG: "false"
