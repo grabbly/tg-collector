@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+ss -tuln | grep 5000#!/usr/bin/env python3
 """
 ArchiveDrop Web Interface
 Provides web-based access to collected messages and audio files.
@@ -130,8 +130,17 @@ def scan_files(date_filter: Optional[str] = None,
 
 @app.route('/')
 def index():
-    """Main page with file listing and search."""
-    return render_template('index.html')
+    """Main page with file listing and search. Shows STORAGE_DIR and its contents for debugging."""
+    storage_dir = STORAGE_DIR
+    try:
+        storage_contents = os.listdir(storage_dir)
+    except Exception as e:
+        storage_contents = [f"Error: {e}"]
+    return render_template(
+        'index.html',
+        storage_dir=storage_dir,
+        storage_contents=storage_contents
+    )
 
 @app.route('/api/files')
 def api_files():
