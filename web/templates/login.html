@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive Drop - Вход</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .login-header p {
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            text-align: center;
+            letter-spacing: 2px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn-login {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn-login:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .btn-login:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c0392b;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            border: 1px solid #fadbd8;
+        }
+
+        .lockout-message {
+            background: #fef9e7;
+            color: #8e7400;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            border: 1px solid #fdeaa7;
+        }
+
+        .pin-input {
+            font-family: monospace;
+            font-size: 1.5rem;
+        }
+
+        .security-note {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 1rem;
+            line-height: 1.4;
+        }
+
+        .attempts-warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1><i class="bi bi-shield-lock"></i> Archive Drop</h1>
+            <p>Введите PIN-код для доступа</p>
+        </div>
+
+        {% if error %}
+            {% if lockout %}
+                <div class="lockout-message">
+                    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+                </div>
+            {% else %}
+                <div class="error-message">
+                    <i class="bi bi-x-circle"></i> {{ error }}
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <form method="POST" autocomplete="off">
+            <div class="form-group">
+                <label for="pin" class="form-label">PIN-код</label>
+                <input 
+                    type="password" 
+                    id="pin" 
+                    name="pin" 
+                    class="form-control pin-input" 
+                    placeholder="••••" 
+                    maxlength="10"
+                    autocomplete="off"
+                    {% if lockout %}disabled{% endif %}
+                    required
+                >
+            </div>
+
+            <button 
+                type="submit" 
+                class="btn-login" 
+                {% if lockout %}disabled{% endif %}
+            >
+                {% if lockout %}
+                    <i class="bi bi-lock"></i> Заблокировано
+                {% else %}
+                    <i class="bi bi-unlock"></i> Войти
+                {% endif %}
+            </button>
+        </form>
+
+        <div class="security-note">
+            <i class="bi bi-info-circle"></i>
+            После 3 неудачных попыток доступ будет заблокирован на 5 минут.
+        </div>
+    </div>
+
+    <script>
+        // Auto-focus on PIN input
+        document.addEventListener('DOMContentLoaded', function() {
+            const pinInput = document.getElementById('pin');
+            if (pinInput && !pinInput.disabled) {
+                pinInput.focus();
+            }
+        });
+
+        // Handle form submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const pinInput = document.getElementById('pin');
+            const pin = pinInput.value.trim();
+            
+            if (pin.length < 3) {
+                e.preventDefault();
+                alert('PIN-код должен содержать минимум 3 символа');
+                return;
+            }
+        });
+
+        // Auto-refresh page if locked out (to check if lockout expired)
+        {% if lockout %}
+        setTimeout(function() {
+            window.location.reload();
+        }, 60000); // Refresh every minute
+        {% endif %}
+    </script>
+</body>
+</html>

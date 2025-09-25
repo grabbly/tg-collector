@@ -7,10 +7,11 @@ Provides web-based access to collected messages and audio files.
 import os
 import re
 import json
+import hashlib
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Optional
-from flask import Flask, render_template, request, jsonify, send_file, abort
+from flask import Flask, render_template, request, jsonify, send_file, abort, session, redirect, url_for
 import mimetypes
 
 app = Flask(__name__)
@@ -18,6 +19,90 @@ app = Flask(__name__)
 # Configuration
 STORAGE_DIR = os.environ.get('STORAGE_DIR', '/opt/tg-collector/storage')
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+PIN_CODE = os.environ.get('PIN_CODE', '1234')  # Default PIN, change via environment
+SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-secret-key-in-production')
+
+app.secret_key = SECRET_KEY
+
+# Rate limiting for PIN attempts
+failed_attempts = {}
+LOCKOUT_TIME = 300  # 5 minutes lockout
+MAX_ATTEMPTS = 3
+
+
+def check_ip_lockout(client_ip):
+    """Check if IP is locked out due to too many failed attempts"""
+    if client_ip in failed_attempts:
+        attempts, last_attempt = failed_attempts[client_ip]
+        if attempts >= MAX_ATTEMPTS:
+            if datetime.now() - last_attempt < timedelta(seconds=LOCKOUT_TIME):
+                return True
+            else:
+                # Lockout expired, reset attempts
+                del failed_attempts[client_ip]
+    return False
+
+def record_failed_attempt(client_ip):
+    """Record a failed login attempt"""
+    now = datetime.now()
+    if client_ip in failed_attempts:
+        attempts, _ = failed_attempts[client_ip]
+        failed_attempts[client_ip] = (attempts + 1, now)
+    else:
+        failed_attempts[client_ip] = (1, now)
+
+def require_auth():
+    """Check if user is authenticated, redirect to login if not"""
+    if not session.get('authenticated'):
+        return redirect(url_for('login'))
+    return None
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page with PIN code"""
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    
+    # Check if IP is locked out
+    if check_ip_lockout(client_ip):
+        remaining = LOCKOUT_TIME - (datetime.now() - failed_attempts[client_ip][1]).seconds
+        return render_template('login.html', 
+                             error=f'Too many failed attempts. Try again in {remaining} seconds.',
+                             lockout=True), 429
+    
+    if request.method == 'POST':
+        pin = request.form.get('pin', '').strip()
+        
+        if pin == PIN_CODE:
+            # Successful login
+            session['authenticated'] = True
+            session.permanent = True
+            app.permanent_session_lifetime = timedelta(hours=24)  # 24 hour session
+            
+            # Clear failed attempts for this IP
+            if client_ip in failed_attempts:
+                del failed_attempts[client_ip]
+                
+            return redirect(url_for('index'))
+        else:
+            # Failed login
+            record_failed_attempt(client_ip)
+            attempts_left = MAX_ATTEMPTS - failed_attempts[client_ip][0]
+            
+            if attempts_left <= 0:
+                return render_template('login.html', 
+                                     error=f'Too many failed attempts. Locked out for {LOCKOUT_TIME//60} minutes.',
+                                     lockout=True), 429
+            else:
+                return render_template('login.html', 
+                                     error=f'Wrong PIN. {attempts_left} attempts remaining.'), 401
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """Logout and clear session"""
+    session.clear()
+    return redirect(url_for('login'))
 
 
 @app.after_request
@@ -172,11 +257,18 @@ def scan_files(
 @app.route('/')
 def index():
     """Main page with file listing and search."""
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
     return render_template('index.html')
 
 @app.route('/api/files')
 def api_files():
     """API endpoint to get files with filtering."""
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
+        
     date_filter = request.args.get('date')
     type_filter = request.args.get('type')
     search_query = request.args.get('search')
@@ -203,6 +295,10 @@ def api_files():
 @app.route('/api/content/<path:filename>')
 def api_content(filename):
     """Get file content for text-like files by relative path."""
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
+        
     filepath = os.path.join(STORAGE_DIR, filename)
     if not os.path.exists(filepath):
         abort(404)
@@ -223,6 +319,10 @@ def api_content(filename):
 @app.route('/api/download/<path:filename>')
 def api_download(filename):
     """Download file by relative path."""
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
+        
     filepath = os.path.join(STORAGE_DIR, filename)
     if not os.path.exists(filepath):
         abort(404)
@@ -232,15 +332,25 @@ def api_download(filename):
 # Backward/alternate route aliases to match frontend
 @app.route('/api/file/<path:filename>')
 def api_file_alias(filename):
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
     return api_content(filename)
 
 @app.route('/download/<path:filename>')
 def download_alias(filename):
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
     return api_download(filename)
 
 # Inline media streaming (useful for audio preview)
 @app.route('/media/<path:filename>')
 def media_stream(filename):
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
+        
     filepath = os.path.join(STORAGE_DIR, filename)
     if not os.path.exists(filepath):
         abort(404)
@@ -250,6 +360,10 @@ def media_stream(filename):
 @app.route('/api/stats')
 def api_stats():
     """Get storage statistics."""
+    auth_check = require_auth()
+    if auth_check:
+        return auth_check
+        
     try:
         files = scan_files(limit=10000)  # Get more files for stats
 

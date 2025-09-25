@@ -46,6 +46,8 @@ services:
     environment:
       STORAGE_DIR: /app/storage
       DEBUG: "false"
+      PIN_CODE: ${PIN_CODE:-1234}
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
     volumes:
       # Same storage as bot (read-only access)
       - /opt/tg-collector/storage:/app/storage:ro
