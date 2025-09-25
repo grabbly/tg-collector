@@ -122,13 +122,16 @@ def scan_files(
                 # Initialize entry; we'll set primary relpath below
                 entry = dict(file_info)
                 entry['meta_relpath'] = None
-                # Set primary based on type/extension
-                if is_media or is_text_primary or not is_json_meta:
-                    # Primary file
+                # Only initialize with non-JSON files as primary
+                if is_media or is_text_primary:
+                    # Primary file - keep as is
                     pass
-                else:
+                elif is_json_meta:
                     # JSON meta as placeholder; primary may be updated later
-                    pass
+                    entry['filename'] = None  # Will be set when primary found
+                    entry['relpath'] = None
+                    entry['extension'] = None
+                    entry['size'] = 0
                 aggregated[base_key] = entry
                 existing = entry
 
@@ -137,42 +140,31 @@ def scan_files(
                 if is_media:
                     # Prefer media as primary
                     existing.update({
+                        'filename': file_info['filename'],
                         'relpath': file_info['relpath'],
                         'extension': file_info['extension'],
                         'size': file_info['size'],
                     })
                 elif is_json_meta:
                     existing['meta_relpath'] = file_info['relpath']
-                    # If we don't yet have a primary, set to json for visibility
-                    if existing.get('relpath') is None:
-                        existing.update({
-                            'relpath': file_info['relpath'],
-                            'extension': file_info['extension'],
-                            'size': file_info['size'],
-                        })
             else:  # text
                 if is_text_primary:
                     # Prefer .txt as primary
                     existing.update({
+                        'filename': file_info['filename'],
                         'relpath': file_info['relpath'],
                         'extension': file_info['extension'],
                         'size': file_info['size'],
                     })
                 elif is_json_meta:
                     existing['meta_relpath'] = file_info['relpath']
-                    if existing.get('relpath') is None:
-                        existing.update({
-                            'relpath': file_info['relpath'],
-                            'extension': file_info['extension'],
-                            'size': file_info['size'],
-                        })
             # (Old list-based accumulation removed; aggregation is used instead)
     except Exception as e:
         print(f"Error scanning files: {e}")
     # Turn into list and sort by datetime descending
     files_list = list(aggregated.values())
-    # Exclude JSON files from listing per requirements
-    files_list = [f for f in files_list if f.get('extension', '').lower() != 'json']
+    # Drop entries that only have JSON metadata but no primary file, or have None filename
+    files_list = [f for f in files_list if f.get('relpath') and f.get('filename') and f.get('extension', '').lower() != 'json']
     files_list.sort(key=lambda x: x['datetime'], reverse=True)
     # Enforce limit
     return files_list[:limit]
