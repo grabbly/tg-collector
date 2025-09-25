@@ -79,13 +79,33 @@ class Config:
         }
 
 
-# Create global config instance - only when imported as main module
-# Tests should create their own Config instances or use mocks
-config = None
+# Create global config instance - regenerated if env changes
+config: Optional[Config] = None
+_last_env_fingerprint: Optional[str] = None
+
+def _env_fingerprint() -> str:
+    """Compute a small fingerprint of relevant env vars to detect changes."""
+    keys = [
+        "BOT_TOKEN",
+        "STORAGE_DIR",
+        "RATE_LIMIT_PER_MIN",
+        "MAX_AUDIO_BYTES",
+        "ALLOWLIST",
+        "LOG_LEVEL",
+    ]
+    return "|".join(f"{k}={os.getenv(k, '')}" for k in keys)
 
 def get_config() -> Config:
-    """Get global config instance, creating it if needed."""
-    global config
-    if config is None:
+    """Get global config instance, creating or refreshing it if env changed."""
+    global config, _last_env_fingerprint
+    fp = _env_fingerprint()
+    if config is None or _last_env_fingerprint != fp:
         config = Config()
+        _last_env_fingerprint = fp
     return config
+
+def reset_config_cache() -> None:
+    """Reset cached config. Useful in tests when env vars are changed."""
+    global config, _last_env_fingerprint
+    config = None
+    _last_env_fingerprint = None

@@ -87,9 +87,8 @@ def save_text(
             "timestamp": timestamp.isoformat(),
             "chat_id": chat_id,
             "message_id": message_id,
-            "sender_id": sender_id,
             "type": "text",
-            "file_size": len(text_bytes),
+            "size": len(text_bytes),
             "mime_type": "text/plain",
             "checksum": checksum,
             "storage_path": str(text_path)
@@ -130,7 +129,8 @@ def save_audio(
     mime_type: str,
     extension: str,
     timestamp: datetime,
-    sender_id: Optional[int] = None
+    sender_id: Optional[int] = None,
+    duration: Optional[int] = None
 ) -> Tuple[Path, Path]:
     """
     Save audio message atomically with metadata JSON.
@@ -188,10 +188,10 @@ def save_audio(
             "timestamp": timestamp.isoformat(),
             "chat_id": chat_id,
             "message_id": message_id,
-            "sender_id": sender_id,
             "type": "audio",
-            "file_size": len(audio_data),
+            "size": len(audio_data),
             "mime_type": mime_type,
+            "duration": duration,
             "checksum": checksum,
             "storage_path": str(audio_path)
         }
