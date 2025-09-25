@@ -80,44 +80,34 @@ def init_rate_limiter() -> RateLimiter:
 async def safe_answer(message: Message, text: str) -> None:
     """Send a reply to the user safely.
 
-    - If message.answer returns an awaitable, await it (normal runtime).
-    - If it's a MagicMock (non-awaitable), just call it to record invocation (tests).
-    - Log real errors from Telegram API.
+    - Uses global bot instance for sending messages.
+    - Logs both success and failure cases.
+    - Handles both production and test environments.
     """
+    global bot
+    
     try:
-        result = message.answer(text)
-        # Detect awaitable results without importing inspect in hot path
-        if asyncio.isfuture(result) or hasattr(result, "__await"):
-            await result  # type: ignore[func-returns-value]
-        # else: non-awaitable mock or sync function; already invoked
-        
-        # Log successful message sending
-        log_event(
-            logger=logger,
-            event="message_sent_successfully",
-            message=f"Message sent to chat {message.chat.id}",
-            chat_id=message.chat.id,
-            message_id=message.message_id,
-            status="success"
-        )
-        
-    except TypeError:
-        try:
-            # Fallback: attempt a non-awaited call (for mocks)
-            message.answer(text)
-        except Exception as e:
-            # Log real API errors, but allow test mocks to pass
-            if not str(type(e).__name__).startswith('Mock'):
-                log_event(
-                    logger=logger,
-                    event="message_send_error",
-                    message=f"Failed to send message: {e}",
-                    chat_id=message.chat.id,
-                    message_id=message.message_id,
-                    status="error"
-                )
+        if bot is not None:
+            # Use global bot instance
+            result = await bot.send_message(chat_id=message.chat.id, text=text)
+            
+            # Log successful message sending
+            log_event(
+                logger=logger,
+                event="message_sent_successfully",
+                message=f"Message sent to chat {message.chat.id}",
+                chat_id=message.chat.id,
+                message_id=message.message_id,
+                status="success"
+            )
+        else:
+            # Fallback to message.answer for tests or when bot is not initialized
+            result = message.answer(text)
+            if asyncio.isfuture(result) or hasattr(result, "__await__"):
+                await result
+                
     except Exception as e:
-        # Log all other real errors (API errors, network issues, etc.)
+        # Log all errors (API errors, network issues, etc.)
         log_event(
             logger=logger,
             event="message_send_error",
