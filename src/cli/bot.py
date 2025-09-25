@@ -68,7 +68,7 @@ async def safe_answer(message: Message, text: str) -> None:
 
     - If message.answer returns an awaitable, await it (normal runtime).
     - If it's a MagicMock (non-awaitable), just call it to record invocation (tests).
-    - Swallow TypeError from awaiting non-coroutines.
+    - Log real errors from Telegram API.
     """
     try:
         result = message.answer(text)
@@ -80,9 +80,27 @@ async def safe_answer(message: Message, text: str) -> None:
         try:
             # Fallback: attempt a non-awaited call (for mocks)
             message.answer(text)
-        except Exception:
-            # In tests, we don't care if this fails
-            pass
+        except Exception as e:
+            # Log real API errors, but allow test mocks to pass
+            if not str(type(e).__name__).startswith('Mock'):
+                log_event(
+                    logger=logger,
+                    event="message_send_error",
+                    message=f"Failed to send message: {e}",
+                    chat_id=message.chat.id,
+                    message_id=message.message_id,
+                    status="error"
+                )
+    except Exception as e:
+        # Log all other real errors (API errors, network issues, etc.)
+        log_event(
+            logger=logger,
+            event="message_send_error",
+            message=f"Failed to send message: {e}",
+            chat_id=message.chat.id,
+            message_id=message.message_id,
+            status="error"
+        )
 
 
 @dp.message(CommandStart())
