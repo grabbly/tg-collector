@@ -14,8 +14,8 @@ services:
       PYTHONPATH: ${PYTHONPATH}
       BOT_TOKEN: ${BOT_TOKEN}
     volumes:
-      # Persistent storage for collected messages
-      - archive_storage:/app/storage
+      # Persistent storage for collected messages (host bind-mount)
+      - /opt/tg-collector/storage:/app/storage
       # Optional: custom config directory
       # - ./config:/app/config:ro
     # Optional: Expose health check port
@@ -38,5 +38,5 @@ services:
           cpus: '0.1'
 
 volumes:
-  archive_storage:
-    driver: local
+  # archive_storage:
+  #   driver: local
