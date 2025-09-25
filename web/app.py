@@ -16,8 +16,16 @@ import mimetypes
 app = Flask(__name__)
 
 # Configuration
+
 STORAGE_DIR = os.environ.get('STORAGE_DIR', '/opt/tg-collector/storage')
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+
+# Debug: print STORAGE_DIR and its contents at startup
+print(f"[DEBUG] STORAGE_DIR is set to: {STORAGE_DIR}")
+try:
+    print(f"[DEBUG] Files in STORAGE_DIR at startup: {os.listdir(STORAGE_DIR)}")
+except Exception as e:
+    print(f"[DEBUG] Could not list STORAGE_DIR contents at startup: {e}")
 
 def parse_filename(filename: str) -> Optional[Dict]:
     """Parse ArchiveDrop filename into components."""
@@ -62,23 +70,24 @@ def scan_files(date_filter: Optional[str] = None,
     try:
         storage_path = Path(STORAGE_DIR)
         if not storage_path.exists():
+            print(f"[DEBUG] STORAGE_DIR does not exist: {STORAGE_DIR}")
             return files
-            
+        # Debug: print contents of STORAGE_DIR on each scan
+        try:
+            print(f"[DEBUG] Files in STORAGE_DIR during scan: {os.listdir(STORAGE_DIR)}")
+        except Exception as e:
+            print(f"[DEBUG] Could not list STORAGE_DIR contents during scan: {e}")
         for filepath in storage_path.iterdir():
             if not filepath.is_file():
                 continue
-                
             file_info = parse_filename(filepath.name)
             if not file_info:
                 continue
-                
             # Apply filters
             if date_filter and file_info['date'] != date_filter:
                 continue
-                
             if type_filter and file_info['type'] != type_filter:
                 continue
-                
             # Search in text files content
             if search_query and file_info['type'] == 'text':
                 try:
@@ -87,12 +96,9 @@ def scan_files(date_filter: Optional[str] = None,
                         continue
                 except:
                     continue
-                    
             files.append(file_info)
-            
             if len(files) >= limit:
                 break
-                
     except Exception as e:
         print(f"Error scanning files: {e}")
         
