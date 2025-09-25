@@ -36,7 +36,3 @@ services:
         reservations:
           memory: 128M
           cpus: '0.1'
-
-volumes:
-  # archive_storage:
-  #   driver: local
