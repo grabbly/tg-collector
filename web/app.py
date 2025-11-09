@@ -19,8 +19,24 @@ app = Flask(__name__)
 # Configuration
 STORAGE_DIR = os.environ.get('STORAGE_DIR', '/opt/tg-collector/storage')
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
-PIN_CODE = os.environ.get('PIN_CODE', '1234')  # Default PIN, change via environment
-SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-secret-key-in-production')
+
+# Security: PIN_CODE and SECRET_KEY are REQUIRED in production
+PIN_CODE = os.environ.get('PIN_CODE')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+
+# Validation: Fail fast if secrets are not configured
+if not PIN_CODE:
+    raise ValueError("PIN_CODE environment variable must be set")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable must be set")
+
+# Warn if using weak/default values
+if PIN_CODE == '1234':
+    import sys
+    print("WARNING: Using default PIN_CODE '1234' - change this in production!", file=sys.stderr)
+if SECRET_KEY == 'change-this-secret-key-in-production':
+    import sys
+    print("WARNING: Using default SECRET_KEY - change this in production!", file=sys.stderr)
 
 app.secret_key = SECRET_KEY
 

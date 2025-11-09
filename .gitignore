@@ -10,6 +10,13 @@ env/
 
 # Environment variables (contains secrets)
 .env
+.env.*
+!.env.example
+!.env.template
+*/.env
+*/.env.*
+!*/.env.example
+!*/.env.template
 
 # IDE
 .vscode/
@@ -52,6 +59,20 @@ coverage.xml
 
 # Logs
 *.log
+logs/
+*.log.*
+
+# Temporary and sensitive data
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+secrets/
+credentials/
+*.pem
+*.key
+*.cert
 
 # mypy
 .mypy_cache/
